@@ -68,14 +68,14 @@
 	">
 		<button 
 			onclick={addStory} 
-			class="w-16 h-16 rounded-full bg-green-700 text-white text-3xl leading-1 flex items-center justify-center shrink-0"
+			class="w-16 h-16 rounded-full bg-green-700 text-white text-3xl leading-1 flex items-center justify-center shrink-0 cursor-pointer"
 		>
 			+
 		</button>
 		{#each storiesQuery.result.toReversed() as story (story.id)}
 			<button 
 				onclick={()=>deleteStory(story.id)}
-				class="w-16 h-16 rounded-full overflow-hidden border border-divider shrink-0"
+				class="w-16 h-16 rounded-full overflow-hidden border border-divider shrink-0 cursor-pointer"
 			>
 				<img src={story.imageUrl} alt="story" class="w-full h-full object-cover" />
 			</button>
