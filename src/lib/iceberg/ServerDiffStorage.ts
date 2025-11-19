@@ -1,8 +1,8 @@
-import { RequestObject } from "./core.js";
+import { ParsedRequest } from "./core.js";
 
 export interface ServerDiffStorage {
-	getResponse(request: RequestObject, responseHash: string): Promise<string | undefined>;
-	setResponse(request: RequestObject, responseHash: string, response: string): Promise<void>;
+	getResponse(request: ParsedRequest, responseHash: string): Promise<string | undefined>;
+	setResponse(request: ParsedRequest, responseHash: string, response: string): Promise<void>;
 }
 
 export class InMemoryServerDiffStorage implements ServerDiffStorage {
@@ -10,13 +10,13 @@ export class InMemoryServerDiffStorage implements ServerDiffStorage {
 	readonly maxStoredResponses = 100;
 
 
-	async getResponse(request: RequestObject, responseHash: string) {
+	async getResponse(request: ParsedRequest, responseHash: string) {
 		const key = this.#key(request, responseHash);
 
 		return this.#storedResponses.get(key);
 	}
 
-	async setResponse(request: RequestObject, responseHash: string, response: string) {
+	async setResponse(request: ParsedRequest, responseHash: string, response: string) {
 		const key = this.#key(request, responseHash);
 
 		this.#storedResponses.delete(key); // delete to refresh order
@@ -32,7 +32,7 @@ export class InMemoryServerDiffStorage implements ServerDiffStorage {
 		}
 	}
 
-	#key(_request: RequestObject, responseHash: string): string {
+	#key(_request: ParsedRequest, responseHash: string): string {
 		return responseHash;
 	}
 }

@@ -15,40 +15,40 @@ export namespace diff {
 	export const decode = decodeDiffs;
 }
 
-function computeDiff(oldStr: string, newStr: string): diff.Diffs {
-	if (oldStr === newStr) return [];
+function computeDiff(oldString: string, newString: string): diff.Diffs {
+	if (oldString === newString) return [];
 
-	const oldLen = oldStr.length;
-	const newLen = newStr.length;
+	const oldLen = oldString.length;
+	const newLen = newString.length;
 
 	// Find common prefix length
 	let start = 0;
-	while (start < oldLen && start < newLen && oldStr[start] === newStr[start]) {
+	while (start < oldLen && start < newLen && oldString[start] === newString[start]) {
 		start++;
 	}
 
 	// Find common suffix length, without crossing the prefix
 	let endOld = oldLen - 1;
 	let endNew = newLen - 1;
-	while (endOld >= start && endNew >= start && oldStr[endOld] === newStr[endNew]) {
+	while (endOld >= start && endNew >= start && oldString[endOld] === newString[endNew]) {
 		endOld--;
 		endNew--;
 	}
 
 	const deleteCount = Math.max(0, endOld - start + 1);
-	const insertText = newStr.slice(start, endNew + 1);
+	const insertText = newString.slice(start, endNew + 1);
 
 	if (deleteCount === 0 && insertText.length === 0) return [];
 
 	return [{ index: start, deleteCount, insertText }];
 }
 
-function applyDiff(oldStr: string, diffs: diff.Diffs): string {
-	if (!diffs || diffs.length === 0) return oldStr;
+function applyDiff(oldString: string, diffs: diff.Diffs): string {
+	if (!diffs || diffs.length === 0) return oldString;
 
 	// Apply from highest index to lowest so earlier indices remain valid.
 	const ordered = [...diffs].sort((a, b) => b.index - a.index);
-	let result = oldStr;
+	let result = oldString;
 
 	for (const { index, deleteCount, insertText } of ordered) {
 		const i = Math.max(0, Math.min(index, result.length));
@@ -96,7 +96,6 @@ function encodeDiffs(diffs: diff.Diffs): Uint8Array {
 }
 
 function decodeDiffs(encoded: ArrayBuffer | ArrayBufferView): diff.Diffs {
-	// Accept ArrayBuffer or any ArrayBufferView (e.g., Uint8Array, DataView)
 	if (!encoded) return [];
 
 	const u8 = (encoded instanceof ArrayBuffer)

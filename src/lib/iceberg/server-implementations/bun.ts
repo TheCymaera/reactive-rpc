@@ -1,4 +1,4 @@
-import { IcebergHeaders, RequestObject } from "../core.js";
+import { IcebergHeaders, ParsedRequest } from "../core.js";
 import { diff } from "../diff.js";
 import { ServerDiffStorage } from "../ServerDiffStorage.js";
 import { ProcedureRegistry } from "../procedureServer.js";
@@ -59,7 +59,7 @@ async function handleRequest(procedures: ProcedureRegistry, request: Request, di
 	}
 }
 
-async function parseRequest(request: Request): Promise<RequestObject> {
+async function parseRequest(request: Request): Promise<ParsedRequest> {
 	const url = new URL(request.url);
 	const procedureName = decodeURIComponent(url.pathname.split('/').pop() || '');
 
@@ -80,7 +80,7 @@ async function parseRequest(request: Request): Promise<RequestObject> {
 
 async function generateDiffResponse(
 	storage: ServerDiffStorage,
-	request: RequestObject,
+	request: ParsedRequest,
 	lastHash: string | undefined,
 	hash: string,
 	response: string
@@ -106,11 +106,6 @@ async function generateDiffResponse(
 }
 
 import { createHash } from "node:crypto";
-async function hashString(str: string): Promise<string> {
-	//const encoder = new TextEncoder();
-	//const data = encoder.encode(str);
-	//const hashBuffer = await crypto.subtle.digest('md5', data);
-	//const hashArray = Array.from(new Uint8Array(hashBuffer));
-	//const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-	return createHash('md5').update(str).digest('hex');
+async function hashString(string: string): Promise<string> {
+	return createHash('md5').update(string).digest('hex');
 }

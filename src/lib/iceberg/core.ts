@@ -3,7 +3,7 @@ export namespace IcebergHeaders {
 	export const DIFFING_HASH = 'X-Iceberg-Hash';
 }
 
-export type RequestObject = {
+export type ParsedRequest = {
 	kind: 'query' | 'mutation';
 	procedureName: string;
 	input: unknown;

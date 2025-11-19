@@ -1,4 +1,4 @@
-import { IcebergHeaders, RequestObject } from "../core.js";
+import { IcebergHeaders, ParsedRequest } from "../core.js";
 import { ClientDiffStorage, InMemoryClientDiffStorage } from "../ClientDiffStorage.js";
 import { diff } from "../diff.js";
 import { ClientImplementation } from "../procedureClient.js";
@@ -55,7 +55,7 @@ export class HTTPClient implements ClientImplementation {
 	}
 
 	async #processResponse(
-		request: RequestObject,
+		request: ParsedRequest,
 		previousResponse: { hash: string, response: string } | undefined,
 		response: Response
 	) {
@@ -98,7 +98,7 @@ export class FetchError extends Error {
 async function processDiff(
 	storage: ClientDiffStorage,
 	previousResponse: { hash: string, response: string } | undefined,
-	request: RequestObject,
+	request: ParsedRequest,
 	isDiff: boolean,
 	hash: string,
 	response: Response
