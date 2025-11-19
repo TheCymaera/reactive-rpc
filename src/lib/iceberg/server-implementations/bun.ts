@@ -40,7 +40,7 @@ async function handleRequest(procedures: ProcedureRegistry, request: Request, di
 		let responseText: BodyInit = JSON.stringify(result.value);
 
 
-		const hash = hashString(responseText);
+		const hash = await hashString(responseText);
 		responseInit.headers[IcebergHeaders.DIFFING_HASH] = hash;
 
 		const diffed = await generateDiffResponse(diffStorage, parsed, lastRequestHash, hash, responseText);
@@ -105,12 +105,12 @@ async function generateDiffResponse(
 	return diffsString
 }
 
-function hashString(str: string): string {
-	let hash = 0;
-	for (let i = 0; i < str.length; i++) {
-		const chr = str.charCodeAt(i);
-		hash = (hash << 5) - hash + chr;
-		hash |= 0; // Convert to 32bit integer
-	}
-	return hash.toString();
+import { createHash } from "node:crypto";
+async function hashString(str: string): Promise<string> {
+	//const encoder = new TextEncoder();
+	//const data = encoder.encode(str);
+	//const hashBuffer = await crypto.subtle.digest('md5', data);
+	//const hashArray = Array.from(new Uint8Array(hashBuffer));
+	//const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+	return createHash('md5').update(str).digest('hex');
 }

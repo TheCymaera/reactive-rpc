@@ -1,11 +1,11 @@
 import { createBunHandler } from "../lib/iceberg/server-implementations/bun.js";
 import { InMemoryServerDiffStorage } from "../lib/iceberg/ServerDiffStorage.js";
-import { currentRequest, requestContext } from "./currentRequest.js";
+import { requestContext } from "./currentRequest.js";
 import { myProcedures } from "./myProcedures.js";
 
 const icebergHandler = createBunHandler(
 	myProcedures,
-	new InMemoryServerDiffStorage(() => currentRequest().headers.get("Authorization") || "anonymous")
+	new InMemoryServerDiffStorage()
 );
 
 const server = Bun.serve({
