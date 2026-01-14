@@ -1,4 +1,4 @@
-import { ProcedureRegistry } from "./procedureServer.js";
+import type { ProcedureRegistry } from "./procedureServer.js";
 
 export interface ClientImplementation {
 	query(procedureName: string, input: unknown): Promise<{ result: unknown, dependencies: string[] }>;

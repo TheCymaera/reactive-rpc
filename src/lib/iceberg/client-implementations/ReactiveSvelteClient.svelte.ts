@@ -1,8 +1,8 @@
-import { ClientImplementation } from "../procedureClient.js";
+import type { ClientImplementation } from "../procedureClient.js";
+import { createSubscriber } from 'svelte/reactivity';
 
 export class ReactiveSvelteClient implements ClientImplementation {
 	readonly inner: ClientImplementation;
-	readonly subscribedDependencies = new Set<string>();
 	constructor(options: { 
 		inner: ClientImplementation,
 	}) {
@@ -11,22 +11,21 @@ export class ReactiveSvelteClient implements ClientImplementation {
 
 	async query(procedureName: string, input: unknown) {
 		const key = this.#key(procedureName, input);
-		console.log(`Querying ${key}`)
-
-		// trigger reactivity
-		this.#trackerInc[key];
 		
-		const result = await this.inner.query(procedureName, input);
+		const tracked = this.#trackedList[key] ??= new Tracked(() => {
+			console.log(`Sending request for ${key}`);
+			return this.inner.query(procedureName, input);
+		}, () => {
+			console.log(`Un-tracking ${key}`);
+			delete this.#trackedList[key];
+		});
 
-		// store dependencies so we can invalidate this query later
-		this.#trackerDependencies[key] = result.dependencies;
-
-		return result;
+		return tracked.promise;
 	}
 
 	async mutation(procedureName: string, input: unknown) {
 		const result = await this.inner.mutation(procedureName, input);
-		this.#invalidate(result.dependencies);
+		this.#refresh(result.dependencies);
 		return result;
 	}
 
@@ -34,16 +33,47 @@ export class ReactiveSvelteClient implements ClientImplementation {
 		return `${procedureName}(${JSON.stringify(input)})`;
 	}
 
-	#trackerDependencies: Record<string, string[]> = $state.raw({});
-	#trackerInc: Record<string, number> = $state({});
+	#trackedList: Record<string, Tracked> = $state.raw({});
 
-	#invalidate(dependencies: string[]) {
-		for (const [key, deps] of Object.entries(this.#trackerDependencies)) {
+	async #refresh(dependencies: string[]) {
+		for (const [_, tracked] of Object.entries(this.#trackedList)) (async ()=>{
+			const result = await tracked.promise;
+			const deps = result.dependencies;
+
 			const isRelated = dependencies.some(dep => deps.includes(dep));
-			if (!isRelated) continue;
+			if (!isRelated) return;
 
-			// increment to trigger effect
-			this.#trackerInc[key] = (this.#trackerInc[key] || 0) + 1;
-		}
+			tracked.refresh();
+		})();
 	}
+}
+
+class Tracked {
+	get promise() {
+		this.#subscribe();
+		return this.#promise;
+	}
+
+	refresh() {
+		// will be replaced in constructor
+	}
+
+	constructor(
+		public query: ()=>Promise<{ dependencies: string[], result: unknown }>,
+		cleanup: ()=>void,
+	) {
+		this.#promise = this.query();
+		this.#subscribe = createSubscriber(update => {
+
+			this.refresh = () => {
+				this.#promise = this.query();
+				update();
+			}
+
+			return cleanup;
+		});
+	}
+
+	#promise: Promise<{ dependencies: string[], result: unknown }>;
+	#subscribe: ()=>void;
 }

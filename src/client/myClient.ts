@@ -1,6 +1,6 @@
 import { HTTPClient } from "../lib/iceberg/client-implementations/HTTPClient.js";
 import { Client } from "../lib/iceberg/procedureClient.js";
-import { myProcedures } from "../server/myProcedures.js";
+import type { myProcedures } from "../server/myProcedures.js";
 import { ReactiveSvelteClient } from "../lib/iceberg/client-implementations/ReactiveSvelteClient.svelte.js";
 
 export const myClient = Client.create<typeof myProcedures>({

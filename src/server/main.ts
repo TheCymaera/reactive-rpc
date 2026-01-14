@@ -1,12 +1,17 @@
 import { createBunHandler } from "../lib/iceberg/server-implementations/bun.js";
-import { InMemoryServerDiffStorage } from "../lib/iceberg/ServerDiffStorage.js";
+import { InMemoryServerDiffStorage } from "../lib/iceberg/diff-generators/storage/ServerDiffStorage.js";
 import { currentRequest, requestContext } from "./currentRequest.js";
 import { myProcedures } from "./myProcedures.js";
+import { AdvancedDiffGenerator } from "../lib/iceberg/diff-generators/AdvancedDiffGenerator.js";
+import { BasicDiffGenerator } from "../lib/iceberg/diff-generators/BasicDiffGenerator.js";
 
-const icebergHandler = createBunHandler(
-	myProcedures,
-	new InMemoryServerDiffStorage(() => currentRequest().headers.get("Authorization") || "public")
-);
+const icebergHandler = createBunHandler({
+	procedures: myProcedures,
+	//diffGenerator: new BasicDiffGenerator(),
+	diffGenerator: new AdvancedDiffGenerator(
+		new InMemoryServerDiffStorage(() => currentRequest().headers.get("Authorization") || "public")
+	)
+});
 
 const server = Bun.serve({
 	port: 3000,

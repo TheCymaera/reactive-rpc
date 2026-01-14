@@ -1,5 +1,5 @@
 import z from "zod";
-import { mutation, ProcedureRegistry, query } from "../lib/iceberg/procedureServer.js";
+import { mutation, type ProcedureRegistry, query } from "../lib/iceberg/procedureServer.js";
 import { myDatabase } from "./myDatabase.js";
 
 

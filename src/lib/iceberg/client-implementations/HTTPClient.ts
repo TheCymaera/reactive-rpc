@@ -1,7 +1,7 @@
-import { IcebergHeaders, ParsedRequest } from "../core.js";
-import { ClientDiffStorage, InMemoryClientDiffStorage } from "../ClientDiffStorage.js";
-import { diff } from "../diff.js";
-import { ClientImplementation } from "../procedureClient.js";
+import { IcebergHeaders, type ParsedRequest } from "../core.js";
+import { type ClientDiffStorage, InMemoryClientDiffStorage } from "../ClientDiffStorage.js";
+import { diff } from "../diff-generators/diff.js";
+import type { ClientImplementation } from "../procedureClient.js";
 
 export class HTTPClient implements ClientImplementation {
 	readonly url: string;
@@ -63,7 +63,7 @@ export class HTTPClient implements ClientImplementation {
 		const dependencies = JSON.parse(dependenciesRaw);
 
 		const newHash = response.headers.get(IcebergHeaders.DIFFING_HASH)!;
-		const isDiff = response.headers.get('Content-Type') === diff.EncodedMimeType;
+		const isDiff = response.headers.get(IcebergHeaders.IS_DIFF) === "true";
 
 		const text = await processDiff(
 			this.diffStorage,
@@ -105,7 +105,7 @@ async function processDiff(
 ): Promise<string> {
 	let text: string;
 	if (previousResponse && isDiff) {
-		const raw = await response.arrayBuffer();
+		const raw = await response.text();
 		const parsed = diff.decode(raw)
 		text = diff.apply(previousResponse.response, parsed);
 	} else {

@@ -1,4 +1,4 @@
-import { StandardSchemaV1 } from "@standard-schema/spec";
+import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { AsyncLocalStorage } from "async_hooks";
 
 

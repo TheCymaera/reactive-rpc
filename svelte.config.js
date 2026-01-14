@@ -6,6 +6,6 @@ export default {
 	preprocess: vitePreprocess(),
 	compilerOptions: {
 		//runes: true,
-		//experimental: { async: true }
+		experimental: { async: true }
 	}
 };

@@ -1,17 +1,22 @@
-import { IcebergHeaders, ParsedRequest } from "../core.js";
-import { diff } from "../diff.js";
-import { ServerDiffStorage } from "../ServerDiffStorage.js";
-import { ProcedureRegistry } from "../procedureServer.js";
+import { IcebergHeaders, type ParsedRequest } from "../core.js";
+import { diff } from "../diff-generators/diff.js";
+import type { DiffGenerator } from "../diff-generators/DiffGenerator.js";
+import type { ProcedureRegistry } from "../procedureServer.js";
 
-export function createBunHandler(procedures: ProcedureRegistry, diffStorage: ServerDiffStorage) {
+export interface BunHandlerOptions {
+	procedures: ProcedureRegistry;
+	diffGenerator: DiffGenerator;
+}
+
+export function createBunHandler(options: BunHandlerOptions) {
 	return {
 		fetch(request: Request) {
-			return handleRequest(procedures, request, diffStorage)
+			return handleRequest(options, request)
 		}
 	}
 }
 
-async function handleRequest(procedures: ProcedureRegistry, request: Request, diffStorage: ServerDiffStorage): Promise<Response> {
+async function handleRequest(options: BunHandlerOptions, request: Request): Promise<Response> {
 	const parsed = await parseRequest(request);
 	
 	const responseInit = {
@@ -22,7 +27,7 @@ async function handleRequest(procedures: ProcedureRegistry, request: Request, di
 	};
 	
 	try {
-		const procedure = procedures[parsed.procedureName];
+		const procedure = options.procedures[parsed.procedureName];
 		if (!procedure) {
 			throw new Error(`Unknown procedure: ${parsed.procedureName}`);
 		}
@@ -43,11 +48,16 @@ async function handleRequest(procedures: ProcedureRegistry, request: Request, di
 		const hash = await hashString(responseText);
 		responseInit.headers[IcebergHeaders.DIFFING_HASH] = hash;
 
-		const diffed = await generateDiffResponse(diffStorage, parsed, lastRequestHash, hash, responseText);
+		const diffed = await options.diffGenerator.generateDiffResponse(
+			parsed,
+			lastRequestHash,
+			hash,
+			responseText.toString()
+		);
 		if (diffed !== undefined) {
-			// @ts-expect-error Wrong types
 			responseText = diffed;
 			responseInit.headers['Content-Type'] = diff.EncodedMimeType;
+			responseInit.headers[IcebergHeaders.IS_DIFF] = "true";
 		}
 
 		return new Response(responseText, responseInit);
@@ -75,34 +85,6 @@ async function parseRequest(request: Request): Promise<ParsedRequest> {
 	}
 	
 	throw new Error(`Unsupported HTTP method: ${request.method}`);
-}
-
-
-async function generateDiffResponse(
-	storage: ServerDiffStorage,
-	request: ParsedRequest,
-	lastHash: string | undefined,
-	hash: string,
-	response: string
-) {
-	// don't diff mutations
-	if (request.kind === 'mutation') return
-
-	// store response
-	storage.setResponse(request, hash, response);
-
-	// get last response
-	if (!lastHash) return
-
-	const lastResponse = await storage.getResponse(request, lastHash);
-	if (!lastResponse) return
-
-	const diffs = diff.compute(lastResponse, response);
-	const diffsString = diff.encode(diffs);
-	
-	if (diffsString.length >= response.length) return
-
-	return diffsString
 }
 
 import { createHash } from "node:crypto";

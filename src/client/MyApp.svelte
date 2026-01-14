@@ -1,12 +1,18 @@
 <script lang="ts">
 	import { myClient } from "./myClient.js";
-	import { asyncState } from "./utilities.svelte.js";
 
-	const postsQuery = asyncState(() => myClient.queries.getPosts(), []);
-	const storiesQuery = asyncState(() => myClient.queries.getStories(), []);
+	const postsQuery = $derived(await myClient.queries.getPosts());
+	const storiesQuery = $derived(await myClient.queries.getStories());
+	const storiesQuery2 = $derived(await myClient.queries.getStories());
 
-	let titleField = "";
-	let contentField = "";
+	let titleField = $state("");
+	let contentField = $state("");
+
+	function removeItem<T>(array: T[], item: T) {
+		const index = array.indexOf(item);
+		if (index === -1) return;
+		array.splice(index, 1);
+	}
 	
 	async function addPost() {
 		const post = {
@@ -17,12 +23,12 @@
 		}
 
 		// optimistic update
-		postsQuery.result.push(post);
+		postsQuery.push(post);
 
 		await myClient.mutations.createPost(post)
 		.catch(()=>{
 			// rollback optimistic update
-			postsQuery.result = postsQuery.result.filter(p => p.id !== post.id);
+			removeItem(postsQuery, post);
 			alert("Failed to create post.");
 		})
 		.then(() => {
@@ -44,12 +50,12 @@
 		};
 		
 		// optimistic update
-		storiesQuery.result.push(story);
+		storiesQuery.push(story);
 
 		await myClient.mutations.createStory(story)
 		.catch(() => {
 			// rollback optimistic update
-			storiesQuery.result = storiesQuery.result.filter(s => s.id !== story.id);
+			removeItem(storiesQuery, story);
 			alert("Failed to create story.");
 		});
 	}
@@ -72,7 +78,7 @@
 		>
 			+
 		</button>
-		{#each storiesQuery.result.toReversed() as story (story.id)}
+		{#each storiesQuery.toReversed() as story (story.id)}
 			<button 
 				onclick={()=>deleteStory(story.id)}
 				class="w-16 h-16 rounded-full overflow-hidden border border-divider shrink-0 cursor-pointer"
@@ -103,7 +109,7 @@
 			</button>
 		</div>
 
-		{#each postsQuery.result as post (post.id)}
+		{#each postsQuery as post (post.id)}
 			<div class="p-4 bg-surfaceContainer text-onSurfaceContainer rounded-xl">
 				<h2 class="text-xl font-bold">{post.title}</h2>
 				<div class="opacity-60 text-sm">
@@ -121,5 +127,12 @@
 				</button>
 			</div>
 		{/each}
+	</div>
+
+
+	<div>
+		<code class="mt-8 p-4 bg-surfaceContainer text-onSurfaceContainer rounded-xl w-full block overflow-auto">
+			<pre>{JSON.stringify(storiesQuery2.toReversed(), null, 2)}</pre>
+		</code>
 	</div>
 </div>

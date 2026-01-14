@@ -1,4 +1,4 @@
-import { ParsedRequest } from "./core.js";
+import type { ParsedRequest } from "./core.js";
 
 export interface ClientDiffStorage {
 	getResponse(request: ParsedRequest): Promise<{ hash: string, response: string } | undefined>;
