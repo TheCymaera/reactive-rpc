@@ -2,7 +2,7 @@ import { DependencyTracker } from "../lib/iceberg/procedureServer.js";
 
 export interface Post {
 	id: string;
-	creationTime: number;
+	creationTime: Date;
 	title: string;
 	content: string;
 }
@@ -22,13 +22,13 @@ export const myDatabase = DependencyTracker.track({
 myDatabase.posts.push(
 	{
 		id: crypto.randomUUID(),
-		creationTime: Date.now() - 1000000,
+		creationTime: new Date(Date.now() - 1000000),
 		title: "Hello World!",
 		content: "This is my first post.",
 	},
 	{
 		id: crypto.randomUUID(),
-		creationTime: Date.now() - 500000,
+		creationTime: new Date(Date.now() - 500000),
 		title: "Another post",
 		content: "This is my second post.",
 	}

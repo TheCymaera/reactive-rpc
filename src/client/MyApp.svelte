@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { myClient } from "./myClient.js";
 
+	const enableOptimistic = true;
+
 	const postsQuery = $derived(await myClient.queries.getPosts());
 	const storiesQuery = $derived(await myClient.queries.getStories());
 	const storiesQuery2 = $derived(await myClient.queries.getStories());
@@ -17,13 +19,13 @@
 	async function addPost() {
 		const post = {
 			id: crypto.randomUUID(),
-			creationTime: Date.now(),
+			creationTime: new Date(),
 			title: titleField,
 			content: contentField
 		}
 
 		// optimistic update
-		postsQuery.push(post);
+		if (enableOptimistic) postsQuery.push(post);
 
 		await myClient.mutations.createPost(post)
 		.catch(()=>{
@@ -50,7 +52,7 @@
 		};
 		
 		// optimistic update
-		storiesQuery.push(story);
+		if (enableOptimistic) storiesQuery.push(story);
 
 		await myClient.mutations.createStory(story)
 		.catch(() => {
@@ -109,11 +111,11 @@
 			</button>
 		</div>
 
-		{#each postsQuery as post (post.id)}
+		{#each postsQuery.toReversed() as post (post.id)}
 			<div class="p-4 bg-surfaceContainer text-onSurfaceContainer rounded-xl">
 				<h2 class="text-xl font-bold">{post.title}</h2>
 				<div class="opacity-60 text-sm">
-					Created at: {new Date(post.creationTime).toLocaleString()}
+					Created at: {post.creationTime.toLocaleString()}
 				</div>
 				<hr class="my-2 opacity-20">
 				<p>{post.content}</p>

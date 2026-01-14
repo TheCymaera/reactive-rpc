@@ -1,7 +1,8 @@
-import { IcebergHeaders, type ParsedRequest } from "../core.js";
+import { IcebergHeaders, UserFacingError, type ParsedRequest } from "../core.js";
 import { type ClientDiffStorage, InMemoryClientDiffStorage } from "../ClientDiffStorage.js";
-import { diff } from "../diff-generators/diff.js";
 import type { ClientImplementation } from "../procedureClient.js";
+import { applyJsonPatch, type JSONPatch } from "../diff-generators/jsonPatch.js";
+import { Transformer } from "../../open-utilities/Transformer.js";
 
 export class HTTPClient implements ClientImplementation {
 	readonly url: string;
@@ -56,7 +57,7 @@ export class HTTPClient implements ClientImplementation {
 
 	async #processResponse(
 		request: ParsedRequest,
-		previousResponse: { hash: string, response: string } | undefined,
+		previousResponse: { hash: string, response: unknown } | undefined,
 		response: Response
 	) {
 		const dependenciesRaw = response.headers.get(IcebergHeaders.DEPENDENCIES) || "[]";
@@ -65,54 +66,49 @@ export class HTTPClient implements ClientImplementation {
 		const newHash = response.headers.get(IcebergHeaders.DIFFING_HASH)!;
 		const isDiff = response.headers.get(IcebergHeaders.IS_DIFF) === "true";
 
-		const text = await processDiff(
+		let responseParsed: unknown;
+		try {
+			responseParsed = await response.json();
+		} catch {
+			throw new UserFacingError(500, "Failed to parse server response as JSON.");
+		}
+
+		if (!response.ok) {
+			const message = (responseParsed as { error?: string })?.error || `Request failed with status ${response.status}`;
+			throw new UserFacingError(response.status, message);
+		}
+
+		const unsanitizedResult = await processDiff(
 			this.diffStorage,
 			previousResponse,
 			request,
 			isDiff,
 			newHash,
-			response
+			responseParsed
 		);
-		
-		const json = JSON.parse(text);
 
-		if (!response.ok) {
-			const message = json?.error || `Request failed with status ${response.status}`;
-			throw new FetchError(message, response.status);
-		}
-
+		const result = Transformer.defaultJson.unTransform(unsanitizedResult);
 
 		return {
-			result: json,
+			result,
 			dependencies: dependencies,
 		}
 	}
 }
 
-export class FetchError extends Error {
-	constructor(message: string, public status: number) {
-		super(message);
-	}
-}
-
 async function processDiff(
 	storage: ClientDiffStorage,
-	previousResponse: { hash: string, response: string } | undefined,
+	previousResponse: { hash: string, response: unknown } | undefined,
 	request: ParsedRequest,
 	isDiff: boolean,
 	hash: string,
-	response: Response
-): Promise<string> {
-	let text: string;
+	result: unknown
+): Promise<unknown> {
 	if (previousResponse && isDiff) {
-		const raw = await response.text();
-		const parsed = diff.decode(raw)
-		text = diff.apply(previousResponse.response, parsed);
-	} else {
-		text = await response.text();
+		result = applyJsonPatch(previousResponse.response, result as JSONPatch);
 	}
 
-	storage.setResponse(request, { hash, response: text });
+	storage.setResponse(request, { hash, response: result });
 
-	return text;
+	return result;
 }

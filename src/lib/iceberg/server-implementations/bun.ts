@@ -1,11 +1,12 @@
-import { IcebergHeaders, type ParsedRequest } from "../core.js";
-import { diff } from "../diff-generators/diff.js";
+import { Transformer } from "../../open-utilities/Transformer.js";
+import { IcebergHeaders, UserFacingError, type ParsedRequest } from "../core.js";
 import type { DiffGenerator } from "../diff-generators/DiffGenerator.js";
 import type { ProcedureRegistry } from "../procedureServer.js";
 
 export interface BunHandlerOptions {
 	procedures: ProcedureRegistry;
 	diffGenerator: DiffGenerator;
+	errorGuard?: (thrown: unknown) => UserFacingError;
 }
 
 export function createBunHandler(options: BunHandlerOptions) {
@@ -17,6 +18,16 @@ export function createBunHandler(options: BunHandlerOptions) {
 }
 
 async function handleRequest(options: BunHandlerOptions, request: Request): Promise<Response> {
+	options.errorGuard ??= (thrown: unknown) => {
+		if (thrown instanceof UserFacingError) {
+			return thrown;
+		} else if (thrown instanceof Error) {
+			return new UserFacingError(500, 'An internal error occurred.');
+		} else {
+			return new UserFacingError(500, 'Unknown error.');
+		}
+	}
+	
 	const parsed = await parseRequest(request);
 	
 	const responseInit = {
@@ -36,35 +47,44 @@ async function handleRequest(options: BunHandlerOptions, request: Request): Prom
 			throw new Error(`Procedure ${parsed.procedureName} is not a ${parsed.kind}`);
 		}
 
-		const result = await procedure(parsed.input);
+		const unsanitizedResult = await procedure(parsed.input);
+
+		const result = { 
+			value: Transformer.defaultJson.transform(unsanitizedResult.value),
+			dependencies: unsanitizedResult.dependencies
+		};
 
 		responseInit.headers[IcebergHeaders.DEPENDENCIES] = JSON.stringify([...result.dependencies]);
 
 		const lastRequestHash = request.headers.get(IcebergHeaders.DIFFING_HASH) || undefined;
 
-		let responseText: BodyInit = JSON.stringify(result.value);
-
-
-		const hash = await hashString(responseText);
+		const responseJson = JSON.stringify(result.value);
+		const hash = await hashString(responseJson);
 		responseInit.headers[IcebergHeaders.DIFFING_HASH] = hash;
 
-		const diffed = await options.diffGenerator.generateDiffResponse(
+		const patch = await options.diffGenerator.generateDiffResponse(
 			parsed,
 			lastRequestHash,
 			hash,
-			responseText.toString()
+			result.value
 		);
-		if (diffed !== undefined) {
-			responseText = diffed;
-			responseInit.headers['Content-Type'] = diff.EncodedMimeType;
+
+		let responseBody: string;
+		if (patch !== undefined) {
+			responseBody = JSON.stringify(patch);
 			responseInit.headers[IcebergHeaders.IS_DIFF] = "true";
+		} else {
+			responseBody = responseJson;
 		}
 
-		return new Response(responseText, responseInit);
+		return new Response(responseBody, responseInit);
 	} catch (error) {
-		const result = { error: (error as Error).message };
+		const userFacingError = options.errorGuard(error);
 
-		responseInit.status = 400;
+		responseInit.status = userFacingError.statusCode;
+
+		const result = { error: userFacingError.message };
+
 		return new Response(JSON.stringify(result), responseInit);
 	}
 }

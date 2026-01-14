@@ -1,12 +1,12 @@
 import type { ParsedRequest } from "./core.js";
 
 export interface ClientDiffStorage {
-	getResponse(request: ParsedRequest): Promise<{ hash: string, response: string } | undefined>;
-	setResponse(request: ParsedRequest, data: { hash: string, response: string }): Promise<void>;
+	getResponse(request: ParsedRequest): Promise<{ hash: string, response: unknown } | undefined>;
+	setResponse(request: ParsedRequest, data: { hash: string, response: unknown }): Promise<void>;
 }
 
 export class InMemoryClientDiffStorage implements ClientDiffStorage {
-	readonly storedResponses: Map<string, { hash: string, response: string }> = new Map();
+	readonly storedResponses: Map<string, { hash: string, response: unknown }> = new Map();
 	readonly maxStoredResponses = 100;
 
 	async getResponse(request: ParsedRequest) {
@@ -14,7 +14,7 @@ export class InMemoryClientDiffStorage implements ClientDiffStorage {
 		return stored;
 	}
 
-	async setResponse(request: ParsedRequest, data: { hash: string, response: string }) {
+	async setResponse(request: ParsedRequest, data: { hash: string, response: unknown }) {
 		this.#evictOldResponses();
 		this.storedResponses.set(JSON.stringify(request), data);
 	}

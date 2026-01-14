@@ -2,12 +2,12 @@
 
 export function asyncState<T>(promise: ()=>Promise<T>, initialValue: T) {
 	let result: T = $state(initialValue);
-	let error: Error | null = $state(null);
+	let error: Error | undefined = $state(undefined);
 	let loading = $state(true);
 
 	const reload = async () => {
 		loading = true;
-		error = null;
+		error = undefined;
 		try {
 			result = await promise();
 		} catch (e) {

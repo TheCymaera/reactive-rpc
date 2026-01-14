@@ -1,12 +1,12 @@
 import type { ParsedRequest } from "../../core.js";
 
 export interface ServerDiffStorage {
-	getResponse(request: ParsedRequest, responseHash: string): Promise<string | undefined>;
-	setResponse(request: ParsedRequest, responseHash: string, response: string): Promise<void>;
+	getResponse(request: ParsedRequest, responseHash: string): Promise<unknown | undefined>;
+	setResponse(request: ParsedRequest, responseHash: string, response: unknown): Promise<void>;
 }
 
 export class InMemoryServerDiffStorage implements ServerDiffStorage {
-	readonly #storedResponses: Map<string, string> = new Map();
+	readonly #storedResponses: Map<string, unknown> = new Map();
 	readonly maxStoredResponses = 100;
 
 	// scope hashes to users to prevent oracle attacks
@@ -22,7 +22,9 @@ export class InMemoryServerDiffStorage implements ServerDiffStorage {
 		return this.#storedResponses.get(responseHash);
 	}
 
-	async setResponse(request: ParsedRequest, responseHash: string, response: string) {
+	async setResponse(request: ParsedRequest, responseHash: string, response: unknown) {
+		response = structuredClone(response);
+
 		const userHashes = this.#userHashes.get(this.currentUser()) || new Set<string>();
 		userHashes.add(responseHash);
 		this.#userHashes.set(this.currentUser(), userHashes);
@@ -42,7 +44,7 @@ export class InMemoryServerDiffStorage implements ServerDiffStorage {
 		this.#evictOld(this.#storedResponses, this.maxStoredResponses);
 	}
 
-	#evictOld(map: Map<string, string> | Set<string>, maxSize: number) {
+	#evictOld(map: Map<string, unknown> | Set<string>, maxSize: number) {
 		while (map.size > maxSize) {
 			const firstKey = map.keys().next().value;
 			if (!firstKey) break;

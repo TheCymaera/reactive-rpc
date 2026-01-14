@@ -9,3 +9,9 @@ export type ParsedRequest = {
 	procedureName: string;
 	input: unknown;
 };
+
+export class UserFacingError extends Error {
+	constructor(readonly statusCode: number, message: string) {
+		super(message);
+	}
+}

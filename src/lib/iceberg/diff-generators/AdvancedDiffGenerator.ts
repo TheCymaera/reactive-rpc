@@ -1,6 +1,6 @@
 import type { ParsedRequest } from "../core.js";
-import { diff } from "./diff.js";
 import type { DiffGenerator } from "./DiffGenerator.js";
+import { createJsonPatch, type JSONPatch } from "./jsonPatch.js";
 import type { ServerDiffStorage } from "./storage/ServerDiffStorage.js";
 
 export class AdvancedDiffGenerator implements DiffGenerator {
@@ -10,8 +10,8 @@ export class AdvancedDiffGenerator implements DiffGenerator {
 		request: ParsedRequest,
 		previousResponseHash: string | undefined,
 		currentResponseHash: string,
-		currentResponse: string
-	): Promise<string | undefined> {
+		currentResponse: unknown
+	): Promise<JSONPatch | undefined> {
 		if (previousResponseHash === undefined) {
 			return undefined;
 		}
@@ -20,15 +20,17 @@ export class AdvancedDiffGenerator implements DiffGenerator {
 
 		await this.storage.setResponse(request, currentResponseHash, currentResponse);
 
-		if (!previousResponse) {
+		if (previousResponse === undefined) {
 			return undefined;
 		}
 
-		const diffed = diff.compute(previousResponse, currentResponse);
-		const diffString = diff.encode(diffed);
+		const patch = createJsonPatch(previousResponse, currentResponse);
 
-		if (diffString.length >= currentResponse.length) return undefined;
+		const patchSize = JSON.stringify(patch).length;
+		const responseSize = JSON.stringify(currentResponse).length;
+
+		if (patchSize >= responseSize) return undefined;
 		
-		return diffString;
+		return patch;
 	}
 }

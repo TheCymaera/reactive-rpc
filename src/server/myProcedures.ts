@@ -10,7 +10,7 @@ const getPosts = query(z.void(), async () => {
 const createPost = mutation(z.object({ title: z.string(), content: z.string() }), async (input) => {
 	const newPost = {
 		id: crypto.randomUUID() as string,
-		creationTime: Date.now(),
+		creationTime: new Date(),
 		title: input.title,
 		content: input.content,
 	};
