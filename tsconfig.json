@@ -14,5 +14,7 @@
 
 		"verbatimModuleSyntax": true,
 		"isolatedModules": true,
+
+		"types": ["@types/bun"]
 	}
 }
