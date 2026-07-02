@@ -1,0 +1,6 @@
+{
+	"npm.scriptRunner": "bun",
+	"files.associations": {
+		"*.css": "tailwindcss"
+	}
+}

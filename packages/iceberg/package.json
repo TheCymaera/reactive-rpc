@@ -1,0 +1,35 @@
+{
+	"name": "@iceberg/core",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "./src/index.ts",
+	"exports": {
+		".": "./src/index.ts",
+		"./core": "./src/core.ts",
+		"./dependency-tracker": "./src/DependencyTracker.ts",
+		"./read-set-registry": "./src/ReadSetRegistry.ts",
+		"./procedure-server": "./src/procedureServer.ts",
+		"./procedure-client": "./src/procedureClient.ts",
+		"./serializer": "./src/Serializer.ts",
+		"./sse-hub": "./src/SSEHub.ts",
+		"./read-set-implementations/exact-match": "./src/read-set-implementations/exactMatch.ts",
+		"./client-implementations/http-client": "./src/client-implementations/HTTPClient.ts",
+		"./client-implementations/reactive-svelte-client": "./src/client-implementations/ReactiveSvelteClient.svelte.ts",
+		"./server-implementations/bun": "./src/server-implementations/bun.ts",
+		"./sse-client": "./src/SSEClient.ts"
+	},
+	"dependencies": {
+		"@standard-schema/spec": "^1.1.0"
+	},
+	"peerDependencies": {
+		"svelte": "^5.0.0"
+	},
+	"peerDependenciesMeta": {
+		"svelte": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@types/bun": "^1.3.14"
+	}
+}
