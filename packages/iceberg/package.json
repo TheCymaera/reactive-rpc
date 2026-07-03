@@ -15,7 +15,7 @@
 		"./read-set-implementations/exact-match": "./src/read-set-implementations/exactMatch.ts",
 		"./client-implementations/http-client": "./src/client-implementations/HTTPClient.ts",
 		"./client-implementations/reactive-svelte-client": "./src/client-implementations/ReactiveSvelteClient.svelte.ts",
-		"./server-implementations/bun": "./src/server-implementations/bun.ts",
+		"./server-implementations/fetch": "./src/server-implementations/fetch.ts",
 		"./sse-client": "./src/SSEClient.ts"
 	},
 	"dependencies": {

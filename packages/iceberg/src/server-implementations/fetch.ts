@@ -3,14 +3,12 @@ import type { ProcedureRegistry } from "../procedureServer.js";
 import { SSEHub } from "../SSEHub.js";
 import { JSONSerializer, Serializer } from "../Serializer.js";
 import { DependencyTracker, type DependencyContext } from "../DependencyTracker.js";
-import { createHash } from "node:crypto";
 
-export interface BunHandlerOptions {
+export interface FetchHandlerOptions {
 	procedures: ProcedureRegistry;
 	serializer?: Serializer;
 	hash?: (value: string) => Promise<string>;
 	sseHub?: SSEHub;
-	ssePath?: string;
 	errorGuard?: (thrown: unknown) => UserFacingError;
 }
 
@@ -20,24 +18,19 @@ const defaultErrorGuard = (thrown: unknown): UserFacingError => {
 	return new UserFacingError(500, "Unknown error.");
 };
 
-export function createBunHandler(options: BunHandlerOptions) {
+async function defaultHash(value: string): Promise<string> {
+	const data = new TextEncoder().encode(value);
+	const buffer = await crypto.subtle.digest("SHA-256", data);
+	const bytes = Array.from(new Uint8Array(buffer));
+	return bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export function createFetchHandler(options: FetchHandlerOptions) {
 	const errorGuard = options.errorGuard ?? defaultErrorGuard;
-	const ssePath = options.ssePath ?? "/sse";
-	const sseSuffix = ssePath.startsWith("/") ? ssePath : "/" + ssePath;
-	const hashFunction = options.hash ?? (async (string: string) => createHash("md5").update(string).digest("hex"));
+	const hashFunction = options.hash ?? defaultHash;
 
 	return {
 		fetch(request: Request) {
-			const url = new URL(request.url);
-
-			if (options.sseHub && request.method === "GET" && url.pathname.endsWith(sseSuffix)) {
-				const sessionId = url.searchParams.get("session");
-				if (!sessionId) {
-					return new Response("Missing session ID", { status: 400 });
-				}
-				return options.sseHub.createResponse(sessionId);
-			}
-
 			return handleRequest(
 				options,
 				errorGuard,
@@ -49,7 +42,7 @@ export function createBunHandler(options: BunHandlerOptions) {
 }
 
 async function handleRequest(
-	options: BunHandlerOptions,
+	options: FetchHandlerOptions,
 	errorGuard: (thrown: unknown) => UserFacingError,
 	hashFunction: (value: string) => Promise<string>,
 	request: Request,
@@ -134,4 +127,22 @@ async function parseRequest(request: Request): Promise<ParsedRequest> {
 	}
 
 	throw new UserFacingError(405, `Unsupported HTTP method: ${request.method}`);
+}
+
+export interface SSEFetchHandlerOptions {
+	sseHub: SSEHub;
+}
+
+export function createSSEFetchHandler(options: SSEFetchHandlerOptions) {
+	return {
+		fetch(request: Request) {
+			const url = new URL(request.url);
+
+			const sessionId = url.searchParams.get("session");
+			if (!sessionId) {
+				return new Response("Missing session ID", { status: 400 });
+			}
+			return options.sseHub.createResponse(sessionId);
+		},
+	};
 }

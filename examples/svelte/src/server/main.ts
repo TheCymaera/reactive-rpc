@@ -1,14 +1,14 @@
-import { createBunHandler } from "@iceberg/core/server-implementations/bun";
+import { createFetchHandler, createSSEFetchHandler } from "@iceberg/core/server-implementations/fetch";
 import { SSEHub } from "@iceberg/core/sse-hub";
 import { requestContext } from "./currentRequest.js";
 import { myProcedures } from "./myProcedures.js";
 import { Serializer } from "@iceberg/core/serializer";
 import { devalueSerializer } from "../shared/devalueSerializer.js";
 
-const icebergHandler = createBunHandler({
-	procedures: myProcedures,
-	sseHub: new SSEHub(),
-});
+const sseHub = new SSEHub();
+
+const sseHandler = createSSEFetchHandler({ sseHub });
+const rpcHandler = createFetchHandler({ procedures: myProcedures, sseHub });
 
 Serializer.primary = devalueSerializer;
 
@@ -18,8 +18,11 @@ const server = Bun.serve({
 	fetch(request) {
 		return requestContext.run(request, () => {
 			const url = new URL(request.url);
+			if (url.pathname.startsWith('/api/iceberg/sse')) {
+				return sseHandler.fetch(request);
+			}
 			if (url.pathname.startsWith('/api/iceberg/')) {
-				return icebergHandler.fetch(request);
+				return rpcHandler.fetch(request);
 			}
 			return new Response("Not Found", { status: 404 });
 		});
