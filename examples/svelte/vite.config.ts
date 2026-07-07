@@ -7,7 +7,12 @@ export default vite.defineConfig({
 		tailwindcss(),
 		svelte(),
 	],
-	
+
+	environments: {
+		client: { },
+		backend: { },
+	},
+
 	server: {
 		host: true,
 		proxy: {

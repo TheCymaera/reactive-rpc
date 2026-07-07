@@ -6,7 +6,6 @@ export const devalueSerializer: Serializer = {
 		return devalue.stringify(value);
 	},
 	deserialize: (raw: string) => {
-		console.log("devalueSerializer.deserialize called with raw:", raw);
 		return devalue.parse(raw);
 	}
 }
