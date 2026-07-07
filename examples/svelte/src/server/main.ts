@@ -1,14 +1,14 @@
 import { createFetchHandler, createSSEFetchHandler } from "@iceberg/core/server-implementations/fetch";
 import { SSEHub } from "@iceberg/core/sse-hub";
 import { requestContext } from "./currentRequest.js";
-import { myProcedures } from "./myProcedures.js";
 import { Serializer } from "@iceberg/core/serializer";
 import { devalueSerializer } from "../shared/devalueSerializer.js";
+import { procedures } from "virtual:iceberg-procedures";
 
 const sseHub = new SSEHub();
 
 const sseHandler = createSSEFetchHandler({ sseHub });
-const rpcHandler = createFetchHandler({ procedures: myProcedures, sseHub });
+const rpcHandler = createFetchHandler({ procedures, sseHub });
 
 Serializer.primary = devalueSerializer;
 

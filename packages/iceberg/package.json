@@ -5,6 +5,7 @@
 	"main": "./src/index.ts",
 	"exports": {
 		".": "./src/index.ts",
+		"./virtual": "./src/virtual.d.ts",
 		"./core": "./src/core.ts",
 		"./dependency-tracker": "./src/DependencyTracker.ts",
 		"./read-set-registry": "./src/ReadSetRegistry.ts",
@@ -16,20 +17,27 @@
 		"./client-implementations/http-client": "./src/client-implementations/HTTPClient.ts",
 		"./client-implementations/reactive-svelte-client": "./src/client-implementations/ReactiveSvelteClient.svelte.ts",
 		"./server-implementations/fetch": "./src/server-implementations/fetch.ts",
-		"./sse-client": "./src/SSEClient.ts"
+		"./sse-client": "./src/SSEClient.ts",
+		"./iceberg-procedure": "./src/IcebergProcedure.ts",
+		"./vite-plugin": "./src/vite-plugin.ts"
 	},
 	"dependencies": {
 		"@standard-schema/spec": "^1.1.0"
 	},
 	"peerDependencies": {
-		"svelte": "^5.0.0"
+		"svelte": "latest",
+		"vite": "^8.1.2"
 	},
 	"peerDependenciesMeta": {
 		"svelte": {
 			"optional": true
+		},
+		"vite": {
+			"optional": true
 		}
 	},
 	"devDependencies": {
-		"@types/bun": "^1.3.14"
+		"@types/bun": "^1.3.14",
+		"vite": "^8.1.2"
 	}
 }

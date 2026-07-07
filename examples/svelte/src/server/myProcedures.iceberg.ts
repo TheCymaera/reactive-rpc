@@ -1,14 +1,12 @@
 import z from "zod";
-import { mutation, query } from "@iceberg/core/procedure-server";
-import type { ProcedureRegistry } from "@iceberg/core/procedure-server";
 import { myDatabase } from "./myDatabase.js";
+import { mutation, query } from "@iceberg/core/procedure-server";
 
-
-const getPosts = query(z.void(), async () => {
+export const getPosts = query(z.void(), async () => {
 	return myDatabase.posts;
 });
 
-const createPost = mutation(z.object({ title: z.string(), content: z.string() }), async (input) => {
+export const createPost = mutation(z.object({ title: z.string(), content: z.string() }), async (input) => {
 	const newPost = {
 		id: crypto.randomUUID() as string,
 		creationTime: new Date(),
@@ -20,7 +18,7 @@ const createPost = mutation(z.object({ title: z.string(), content: z.string() })
 	return "Post created successfully";
 });
 
-const deletePost = mutation(z.object({ id: z.string() }), async (input) => {
+export const deletePost = mutation(z.object({ id: z.string() }), async (input) => {
 	const index = myDatabase.posts.findIndex(post => post.id === input.id);
 	if (index === -1) {
 		throw new Error("Post not found");
@@ -30,12 +28,11 @@ const deletePost = mutation(z.object({ id: z.string() }), async (input) => {
 	return "Post deleted successfully";
 });
 
-
-const getStories = query(z.void(), async () => {
+export const getStories = query(z.void(), async () => {
 	return myDatabase.stories;
 });
 
-const createStory = mutation(z.object({ imageUrl: z.string() }), async (input) => {
+export const createStory = mutation(z.object({ imageUrl: z.string() }), async (input) => {
 	const newStory = {
 		id: crypto.randomUUID() as string,
 		imageUrl: input.imageUrl,
@@ -45,7 +42,7 @@ const createStory = mutation(z.object({ imageUrl: z.string() }), async (input) =
 	return "Story created successfully";
 });
 
-const deleteStory = mutation(z.object({ id: z.string() }), async (input) => {
+export const deleteStory = mutation(z.object({ id: z.string() }), async (input) => {
 	const index = myDatabase.stories.findIndex(story => story.id === input.id);
 	if (index === -1) {
 		throw new Error("Story not found");
@@ -54,13 +51,3 @@ const deleteStory = mutation(z.object({ id: z.string() }), async (input) => {
 
 	return "Story deleted successfully";
 });
-
-export const myProcedures = {
-	getPosts,
-	createPost,
-	deletePost,
-	
-	getStories,
-	createStory,
-	deleteStory,
-} satisfies ProcedureRegistry;

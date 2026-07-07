@@ -11,7 +11,7 @@ export namespace Client {
 }
 
 type ProceduresToFunctions<Registry extends ProcedureRegistry> = {
-	[Name in keyof Registry]: Registry[Name]["handler"];
+	[Name in keyof Registry]: Registry[Name];
 };
 
 type ProceduresFilteredByKind<
@@ -35,13 +35,15 @@ function createClient<Procedures extends ProcedureRegistry>({
 
 			return new Proxy({} as any, {
 				get(_: unknown, procedureName: string) {
-					return async (input: unknown) => {
+					const handler = async (input: unknown) => {
 						if (kind === "query") {
 							return (await implementation.query(procedureName, input)).result;
 						} else {
 							return (await implementation.mutation(procedureName, input)).result;
 						}
 					};
+					handler.kind = kind;
+					return handler;
 				},
 			});
 		},

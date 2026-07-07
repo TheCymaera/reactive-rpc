@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { myClient } from "./myClient.js";
+	import { getPosts, createPost, deletePost, getStories, createStory, deleteStory } from "../server/myProcedures.iceberg.js";
 
 	const enableOptimistic = true;
 
-	const postsQuery = $derived(await myClient.queries.getPosts());
-	const storiesQuery = $derived(await myClient.queries.getStories());
-	const storiesQuery2 = $derived(await myClient.queries.getStories());
+	const postsQuery = $derived(await getPosts());
+	const storiesQuery = $derived(await getStories());
+	const storiesQuery2 = $derived(await getStories());
 
 	let titleField = $state("");
 	let contentField = $state("");
@@ -27,7 +27,7 @@
 		// optimistic update
 		if (enableOptimistic) postsQuery.push(post);
 
-		await myClient.mutations.createPost(post)
+		await createPost(post)
 		.catch(()=>{
 			// rollback optimistic update
 			removeItem(postsQuery, post);
@@ -39,8 +39,8 @@
 		});
 	}
 
-	async function deletePost(id: string) {
-		await myClient.mutations.deletePost({ id }).catch(() => {
+	async function deletePostHandler(id: string) {
+		await deletePost({ id }).catch(() => {
 			alert("Failed to delete post.");
 		});
 	}
@@ -54,7 +54,7 @@
 		// optimistic update
 		if (enableOptimistic) storiesQuery.push(story);
 
-		await myClient.mutations.createStory(story)
+		await createStory(story)
 		.catch(() => {
 			// rollback optimistic update
 			removeItem(storiesQuery, story);
@@ -62,8 +62,8 @@
 		});
 	}
 
-	async function deleteStory(id: string) {
-		await myClient.mutations.deleteStory({ id }).catch(() => {
+	async function deleteStoryHandler(id: string) {
+		await deleteStory({ id }).catch(() => {
 			alert("Failed to delete story.");
 		});
 	}
@@ -82,7 +82,7 @@
 		</button>
 		{#each storiesQuery.toReversed() as story (story.id)}
 			<button 
-				onclick={()=>deleteStory(story.id)}
+				onclick={()=>deleteStoryHandler(story.id)}
 				class="w-16 h-16 rounded-full overflow-hidden border border-divider shrink-0 cursor-pointer"
 			>
 				<img src={story.imageUrl} alt="story" class="w-full h-full object-cover" />
@@ -123,7 +123,7 @@
 				
 				<button 
 					class="mt-2 px-4 py-2 bg-red-900 rounded cursor-pointer float-right"
-					onclick={()=>deletePost(post.id)}
+					onclick={()=>deletePostHandler(post.id)}
 				>
 					Delete Post
 				</button>

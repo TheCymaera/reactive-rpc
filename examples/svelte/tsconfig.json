@@ -14,7 +14,9 @@
 
 		"verbatimModuleSyntax": true,
 		"isolatedModules": true,
+		
+		"skipLibCheck": true,
 
-		"types": ["@types/bun", "vite/client", "svelte"]
+		"types": ["@types/bun", "vite/client", "svelte", "@iceberg/core/virtual"]
 	}
 }

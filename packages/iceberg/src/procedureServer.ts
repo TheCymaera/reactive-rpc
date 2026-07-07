@@ -18,9 +18,7 @@ export function mutation<Arguments, Return>(
 
 export type Procedure<Kind extends "query" | "mutation", Input, Output> = {
 	readonly kind: Kind;
-	readonly schema: StandardSchemaV1<Input>;
-	readonly handler: (input: Input) => Promise<Output>;
-} & ((input: unknown) => Promise<Output>);
+} & ((input: Input) => Promise<Output>);
 
 export interface ProcedureRegistry {
 	[key: string]: Procedure<"query" | "mutation", any, any>;
@@ -40,7 +38,5 @@ function createProcedure<Kind extends "query" | "mutation", Input, Output>(optio
 		return options.handler(validation.value);
 	};
 	proc.kind = options.kind;
-	proc.schema = options.schema;
-	proc.handler = options.handler;
 	return proc as unknown as Procedure<Kind, Input, Output>;
 }
